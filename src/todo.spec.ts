@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import inputJson from './input.json';
 import outputJson from './output.json';
-import { convertInput } from './todo';
+import { convertInput, validateOutput } from './todo';
 import { Input } from './types/input';
 
 describe('Todo', () => {
@@ -13,6 +13,16 @@ describe('Todo', () => {
     expect(output.documents[0].entities.length).to.equal(14);
     expect(output.documents[0].annotations.length).to.equal(9);
     expect(output).to.deep.equal(outputJson);
+  });
+
+  it('Should be able to validate the output json', () => {
+    const output = convertInput(inputJson as Input);
+
+    expect(validateOutput(output)).to.equal(true);
+
+    output.documents[0].entities[0].children[0] = { testAttribute: true } as never;
+
+    expect(validateOutput(output)).to.equal(false);
   });
 
   // BONUS: Write tests that validates the output json. Use the function you have written in "src/todo.ts".

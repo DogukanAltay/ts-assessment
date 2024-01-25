@@ -34,7 +34,6 @@ export const convertInput = (input: Input): Output => {
     return { id: document.id, entities, annotations };
   });
 
-  console.log(validateOutput({ documents }));
   return { documents };
 };
 
@@ -87,7 +86,7 @@ const sortAnnotations = (annotationA: ConvertedAnnotation, annotationB: Converte
 
 // BONUS: Create validation function that validates the result of "convertInput". Use yup as library to validate your result.
 
-const validateOutput = (output: Output): boolean => {
+export const validateOutput = (output: Output): boolean => {
   const entitySchema: yup.AnySchema = yup.object<ConvertedEntity>().shape({
     id: yup.string().required(),
     name: yup.string().required(),
@@ -129,8 +128,6 @@ const validateOutput = (output: Output): boolean => {
       )
       .required(),
   });
-
-  console.log(outputSchema.validate(output));
 
   return outputSchema.isValidSync(output);
 };
