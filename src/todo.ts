@@ -1,6 +1,7 @@
-import { Annotation, Entity, Input } from './types/input';
+import { Annotation, Entity, EntityClass, EntityType, Input } from './types/input';
 import { ConvertedAnnotation, ConvertedEntity, Output } from './types/output';
 import _ from 'lodash';
+import * as yup from 'yup';
 
 // TODO: Convert Input to the Output structure. Do this in an efficient and generic way.
 // HINT: Make use of the helper library "lodash"
@@ -29,9 +30,11 @@ export const convertInput = (input: Input): Output => {
       .map((annotation) => convertAnnotation(annotation, annotationGroup, entityMap))
       .filter((annotation) => exportedEntities.includes(annotation.id))
       .sort(sortAnnotations);
+
     return { id: document.id, entities, annotations };
   });
 
+  console.log(validateOutput({ documents }));
   return { documents };
 };
 
@@ -83,3 +86,51 @@ const sortAnnotations = (annotationA: ConvertedAnnotation, annotationB: Converte
 };
 
 // BONUS: Create validation function that validates the result of "convertInput". Use yup as library to validate your result.
+
+const validateOutput = (output: Output): boolean => {
+  const entitySchema: yup.AnySchema = yup.object<ConvertedEntity>().shape({
+    id: yup.string().required(),
+    name: yup.string().required(),
+    type: yup.mixed<EntityType>().required(),
+    class: yup.mixed<EntityClass>().required(),
+    children: yup
+      .array<ConvertedEntity>()
+      .of(yup.lazy(() => entitySchema))
+      .required(),
+  });
+
+  const annotationSchema: yup.AnySchema = yup.object<ConvertedAnnotation>().shape({
+    id: yup.string().required(),
+    entity: yup
+      .object()
+      .shape({
+        id: yup.string().required(),
+        name: yup.string().required(),
+      })
+      .required(),
+    index: yup.number().required(),
+    children: yup
+      .array<ConvertedAnnotation>()
+      .of(yup.lazy(() => annotationSchema))
+      .required(),
+  });
+
+  const outputSchema = yup.object().shape({
+    documents: yup
+      .array()
+      .of(
+        yup.lazy(() =>
+          yup.object().shape({
+            id: yup.string().required(),
+            entities: yup.array<ConvertedEntity>().of(entitySchema).required(),
+            annotations: yup.array<ConvertedAnnotation>().of(annotationSchema).required(),
+          }),
+        ),
+      )
+      .required(),
+  });
+
+  console.log(outputSchema.validate(output));
+
+  return outputSchema.isValidSync(output);
+};
